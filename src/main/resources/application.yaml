@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost/eddle?createDatabaseIfNotExist=true
+    username: root
+    password: 
+  jpa:
+    generate-ddl: true
+    hibernate.ddl-auto: update #CHECK ITS SET TO UPDATE before commit
+  output:
+    ansi:
+      enabled: always
+indexing:
+  interval: PT3S
+
+
