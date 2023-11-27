@@ -15,9 +15,10 @@ The project follows a layered architecture with data stored in a MySQL database.
 is implemented to the console and rolling file appender.
 
 ## Key Features
-* Scheduled and asynchronous crawling starting from seed URLs
+* Scheduled and asynchronous crawling starting from seed URLs in a breadth-first approach
 * Indexing of page content
 * Search across indexed data
+* Submit URLs to be processed first in next crawl batch
 * Configurable properties
   * Crawl schedule interval (webpage.indexing.interval)
   * Initial seed URLs list (webpage.indexing.urls)
@@ -31,7 +32,9 @@ is implemented to the console and rolling file appender.
 ## Getting Started
 1. Clone the repository
 2. Import the project to your favorite IDE
-3. Run the project
+3. Set properties you like the most
+4. Run the project
+5. Index and search
 ### Access the UI at:
 * http://localhost:8080 for frontend to search, start/stop indexing and set next URLs to crawl on top of pending URL
 * http://localhost:8080/swagger-ui/index.html for OpenAPI API documentation
