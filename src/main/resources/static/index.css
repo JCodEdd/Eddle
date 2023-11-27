@@ -47,8 +47,39 @@
   background-color: #f44336;
 }
 
+#urls{
+  display: flex;
+  position: absolute;
+  width: 30%;
+  right: 1%;
+}
+
+#urlsToIndex {
+  flex: 1;
+  color: rgb(0, 0, 0);
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgb(119, 116, 116);
+  border-radius: 5px;
+  padding: 1px 10px;
+}
+
+#urlsBtn {
+  border: 2px solid rgb(119, 116, 116);
+  border-radius: 5px;
+  aspect-ratio: 4;
+  cursor: pointer;
+  margin-left: -7px;
+}
+#urlsBtn:focus {
+  outline: 1px solid rgb(45, 45, 45);
+}
+
+
 .wrapper {
-  width: 400px;
+  display: flex;
+  width: 500px;
   max-width: 100%;
   position: relative;
 }
@@ -60,7 +91,7 @@
   background: rgba(255, 255, 255, 0.1);
   border: 2px solid rgb(103, 100, 100);
   border-radius: 50px;
-  padding: 1rem 2rem;
+  padding: 1rem 2.8rem;
   width: 100%;
 }
 #searchInput:focus {
@@ -76,7 +107,7 @@
   height: 80%;
   position: absolute;
   top: 10%;
-  right: -15%;
+  right: 0.75%;
 }
 #searchBtn:hover {
   opacity: 0.8;
@@ -93,12 +124,3 @@
   opacity: 0.8;
 }
 
-#lowerL{
-  border: none;
-  padding: 7px 15px;
-  cursor: pointer;
-  margin: 10px;
-}
-#lowerL:hover {
-  opacity: 0.8;
-}

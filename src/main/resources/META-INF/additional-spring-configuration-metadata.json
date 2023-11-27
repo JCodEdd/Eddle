@@ -1,7 +1,27 @@
 {"properties": [
   {
-    "name": "indexing.interval",
+    "name": "webpage.indexing.interval",
     "type": "java.lang.String",
     "description": "Interval for next URLs batch indexing in ISO duration format."
+  },
+  {
+    "name": "webpage.indexing.urls",
+    "type": "java.lang.String",
+    "description": "First URLs to add to database, from them starts the first indexing process."
+  },
+  {
+    "name": "webpage.indexing.urlstoindex",
+    "type": "java.lang.Integer",
+    "description": "Number of URLs to index in each scheduled batch"
+  },
+  {
+    "name": "webpage.indexing.interrupt",
+    "type": "java.lang.Boolean",
+    "description": "Whether to interrupt or not the running indexing processes"
+  },
+  {
+    "name": "webpage.page-size",
+    "type": "java.lang.Integer",
+    "description": "Number or results to return from a search"
   }
 ]}

@@ -17,6 +17,10 @@
       <div id="ind" style="text-align:right; width:100%; padding:0;">
         <button id="indx" onclick="indx()">Start indexing</button>
         <button id="stpindx" onclick="stpindx()">Stop indexing</button>
+        <div id="urls">
+          <input type="text" id="urlsToIndex" placeholder="Insert URLs to index next" required>
+          <button id="urlsBtn" onclick="sendurls()">Send</button>
+        </div>
       </div>
       <input type="text" id="searchInput" placeholder="Search in eddle..." required>
       <button id="searchBtn" onclick="search()">
@@ -31,6 +35,8 @@
       </button>
     </div>
     <hr />
+    <span id="page"></span>
+    <button id="nextPage" onclick="nextPage()">Next page</button>
     <div id="results">
       <div id="links">
 

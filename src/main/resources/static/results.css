@@ -11,9 +11,10 @@
 }
 
 .wrapper {
+  display: flex;
   margin: 10px 0px;
   margin-left: 50px;
-  width: 400px;
+  width: 500px;
   max-width: 100%;
   position: relative;
 }
@@ -25,10 +26,9 @@
   background: rgba(255, 255, 255, 0.1);
   border: 2px solid rgb(103, 100, 100);
   border-radius: 50px;
-  padding: 1rem 2rem;
-  width: 100%;
+  padding: 1rem 2.8rem;
+  width: 90%;
 }
-
 #searchInput:focus {
   outline: 2px solid rgb(45, 45, 45);
 }
@@ -40,10 +40,9 @@
   border-radius: 50px;
   aspect-ratio: 1;
   height: 80%;
-  
   position: absolute;
   top: 10%;
-  right: -15%;
+  right: 0.75%;
 }
 #searchBtn:hover {
   opacity: 0.8;
@@ -52,7 +51,7 @@
 
 #ind {
   position: absolute;
-  left: 166%;
+  left: 113%;
 }
 
 #indx{
@@ -79,6 +78,34 @@
   background-color: #f44336;
 }
 
+#urls{
+  display: flex;
+  position: absolute;
+  width: 70%;
+  right: 2%;
+}
+
+#urlsToIndex {
+  flex: 1;
+  color: rgb(0, 0, 0);
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgb(119, 116, 116);
+  border-radius: 5px;
+  padding: 1px 10px;
+}
+
+#urlsBtn {
+  border: 2px solid rgb(119, 116, 116);
+  border-radius: 5px;
+  aspect-ratio: 4;
+  cursor: pointer;
+  margin-left: -7px;
+}
+#urlsBtn:focus {
+  outline: 1px solid rgb(45, 45, 45);
+}
 
 .results{
   max-width: 600px;

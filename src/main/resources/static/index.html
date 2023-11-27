@@ -13,6 +13,10 @@
     <div id="ind" style="text-align:right; width:100%; padding:0;">
       <button id="indx" onclick="indx()">Start indexing</button>
       <button id="stpindx" onclick="stpindx()">Stop indexing</button>
+      <div id="urls">
+        <input type="text" id="urlsToIndex" placeholder="Insert URLs to index next" required>
+        <button id="urlsBtn" onclick="sendurls()">Send</button>
+      </div>
     </div>
     <img id="logoS" src="img/shortLogo.png">
     <img id="logoF" src="img/fullLogo.png">
@@ -32,7 +36,6 @@
     </div>
     <div>
       <button id="lowerS" onclick="search()">Search</button>
-      <button id="lowerL">I'm Feeling Lucky</button>
     </div>
   </div>
 <script src="index.js"></script>

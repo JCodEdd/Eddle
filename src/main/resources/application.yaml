@@ -7,10 +7,16 @@ spring:
   jpa:
     generate-ddl: true
     hibernate.ddl-auto: update #CHECK ITS SET TO UPDATE before commit
+    show-sql: false
   output:
     ansi:
       enabled: always
-indexing:
-  interval: PT3S
+webpage:
+  indexing:
+    interval: PT15S
+    interrupt: true
+    urlstoindex: 10
+    urls: https://www.w3schools.com, https://edition.cnn.com
+  pageSize: 20
 
 

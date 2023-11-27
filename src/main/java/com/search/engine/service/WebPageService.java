@@ -6,11 +6,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import org.springframework.beans.support.PagedListHolder;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import com.search.engine.configuration.IndexProps;
+import com.search.engine.configuration.WebPageProps;
 import com.search.engine.domain.WebPage;
 import com.search.engine.repository.WebPageRepository;
 
@@ -21,8 +27,12 @@ import lombok.RequiredArgsConstructor;
 public class WebPageService {
     
   private final WebPageRepository repository;
+  
+  private final IndexProps indProps;
 
-  public List<WebPage> search(String query){
+  private final WebPageProps webPageProps;
+
+  public List<WebPage> search(String query, Optional<Integer> pageNumber, Optional<Integer> pageSize){
     String decodedQuery = URLDecoder.decode(query, StandardCharsets.UTF_8);
     List<String> qTerms = Arrays.asList(decodedQuery.split("\\s"));
 
@@ -31,7 +41,7 @@ public class WebPageService {
                             .collect(Collectors.toList());
     
     //Taking only the webpages that contain all search terms 
-    //This and the next step are a somewhat odd way to have the webpages that match all the terms at the top.
+    //This and the next step are a somewhat bittersweet way to have the webpages that match all the terms at the top.
     Set<WebPage> allMatchesFirst = new LinkedHashSet<>(allFromRepo.get(0));
     for (List<WebPage> result : allFromRepo) {
         allMatchesFirst.retainAll(result);
@@ -41,12 +51,37 @@ public class WebPageService {
     for(List<WebPage> result : allFromRepo){
       allMatchesFirst.addAll(result);
     }
+   
+    //Setting the ordered and clean results in a page holder so we can return the requested page
+    PagedListHolder<WebPage> page = new PagedListHolder<>(new ArrayList<>(allMatchesFirst));
+    
+    //If not specified  the page size use the default from properties
+    page.setPageSize(pageSize.orElse(webPageProps.getPageSize()));
 
-    return new ArrayList<>(allMatchesFirst);
+    //If not specified  the page number return the first
+    page.setPage(pageNumber.orElse(0));
+
+    return page.getPageList();
   }
 
   private List<WebPage> searchInRepo(String textSearch){
     return repository.findByKeywordsContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrTitleContainingIgnoreCase(textSearch, textSearch, textSearch);
+  }
+  
+  public List<WebPage> addUrls(List<String> urls) throws IllegalArgumentException {
+    //Filters Urls that are already in the database
+    List<String> onlyNewUrls = urls.stream().filter(url -> !repository.existsWebPageByUrl(url))
+                                .collect(Collectors.toList());
+    if (onlyNewUrls.isEmpty()) {
+      throw new IllegalArgumentException("Sent URLs were already in database");
+    }
+    
+    List<WebPage> toReplace = repository
+        .findByTitleIsNullAndDescriptionIsNull(PageRequest.of(0, onlyNewUrls.size()));
+
+    IntStream.range(0, onlyNewUrls.size()).forEach(i -> toReplace.get(i).setUrl(onlyNewUrls.get(i)));
+    repository.flush();
+    return toReplace;
   }
 
   public void delete(Long id){
@@ -62,7 +97,8 @@ public class WebPageService {
   }
 
   public List<WebPage> getLinksToIndex(){
-    return repository.findTop20ByTitleIsNullAndDescriptionIsNull();
+    return repository.findByTitleIsNullAndDescriptionIsNull(PageRequest.of(0, indProps.getUrlstoindex()));
   }
+
 }
 
