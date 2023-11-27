@@ -46,26 +46,20 @@ function getHtmlResultSearch(resultSearch) {
 }
 
 function search(){
-  let auxp = document.location.href.split('&page=');
-  let auxp1 = auxp[1].split('&');
-  let page = auxp1[0];
-  if (!isNaN(page)) {
-    let intPage = parseInt(page) + 1;
-    let query = txtSearch.value;
-    query = query.trim();
-    query = query.replaceAll(/\s+/g, ' ');
-    if (query != "") {
-      let auxs = document.location.href.split('&size=');
-      let size = 'a';
-      if (auxs.length > 1) {
-        let auxs1 = auxs[1].split('&');
-        size = auxs1[0];
-      }
-      if (!isNaN(size)) {
-        document.location.href = 'results.html?query=' + query + '&page=' + intPage + '&size=' + size;
-      } else {
-        document.location.href = 'results.html?query=' + query + '&page=' + intPage;
-      }
+  let query = txtSearch.value;
+  query = query.trim();
+  query = query.replaceAll(/\s+/g, ' ');
+  if (query != "") {
+    let auxs = document.location.href.split('&size=');
+    let size = 'a';
+    if (auxs.length > 1) {
+      let auxs1 = auxs[1].split('&');
+      size = auxs1[0];
+    }
+    if (!isNaN(size)) {
+      document.location.href = 'results.html?query=' + query + '&page=0&size=' + size;
+    } else {
+      document.location.href = 'results.html?query=' + query + '&page=0';
     }
   }
 }
