@@ -1,5 +1,5 @@
 # <img src="https://github.com/JCodEdd/search-engine/blob/main/src/main/resources/static/img/fullLogo.png" width="90" /> Search engine 
-This project implements a basic web crawler and search engine using Spring Boot with a lightweight frontend UI for interaction. 
+This project implements a basic web crawler and search engine as a RESTful API using Spring Boot with a lightweight frontend UI for interaction. 
 Its main purpose is to showcase technical skills and architectural concepts.
 
 ## Technologies
@@ -11,7 +11,8 @@ Its main purpose is to showcase technical skills and architectural concepts.
 * Basic HTML/CSS/JS frontend
 
 ## Architecture
-The project follows a layered architecture with data stored in a MySQL database. Configuration is managed via YAML file, and logging 
+The project follows a layered architecture exposing a RESTful API interface for both a basic frontend and external clients to interact with,
+data is stored in a MySQL database. Configuration is managed via YAML file, and logging 
 is implemented to the console and rolling file appender.
 
 ## Key Features
