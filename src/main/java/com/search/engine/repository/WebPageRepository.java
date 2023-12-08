@@ -9,9 +9,7 @@ import com.search.engine.domain.WebPage;
 
 
 public interface WebPageRepository extends JpaRepository<WebPage, Long>{
-  
-  WebPage findByUrl(String url);
-  
+
   boolean existsWebPageByUrl(String url);
 
   List<WebPage> findByTitleIsNullAndDescriptionIsNull(Pageable pageable);

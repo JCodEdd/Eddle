@@ -6,3 +6,10 @@ spring:
     password: sa
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
+webpage:
+  indexing:
+    interval: PT15S
+    interrupt: true
+    urlstoindex: 10
+    urls: https://www.w3schools.com, https://edition.cnn.com
+  pageSize: 20
