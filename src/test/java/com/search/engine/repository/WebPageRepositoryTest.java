@@ -1,20 +1,28 @@
 package com.search.engine.repository;
 
+import com.search.engine.configuration.IndexProps;
 import com.search.engine.domain.WebPage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.util.Collections;
 import java.util.List;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 @DataJpaTest
+@ExtendWith(SpringExtension.class)
+@EnableConfigurationProperties(value = IndexProps.class)
 class WebPageRepositoryTest {
 
   @Autowired
-  WebPageRepository webPageRepository;
+  private WebPageRepository webPageRepository;
   WebPage webPage1;
   WebPage webPage2;
   WebPage webPage3;
@@ -35,11 +43,16 @@ class WebPageRepositoryTest {
   }
 
   @Test
-  void existsWebPageByUrl() {
+  void testExistsWebPageByUrl() {
+    assertThat(webPageRepository.existsWebPageByUrl("www.testwp1.com")).isTrue();
   }
 
   @Test
-  void findByTitleIsNullAndDescriptionIsNull() {
+  void testFindByTitleIsNullAndDescriptionIsNull() {
+    List<WebPage> expected = webPageRepository
+            .findByTitleIsNullAndDescriptionIsNull(PageRequest.ofSize(1));
+    assertThat(expected.get(0).getId()).isEqualTo(webPage2.getId());
+    assertThat(expected.get(0).getUrl()).isEqualTo(webPage2.getUrl());
   }
 
   @Test
