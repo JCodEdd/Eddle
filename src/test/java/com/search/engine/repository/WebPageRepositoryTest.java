@@ -14,7 +14,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+
 
 @DataJpaTest
 @ExtendWith(SpringExtension.class)
@@ -26,36 +27,64 @@ class WebPageRepositoryTest {
   WebPage webPage1;
   WebPage webPage2;
   WebPage webPage3;
+  WebPage webPage4;
 
   @BeforeEach
   void setUp() {
-    webPage1 = new WebPage(1L, "Test wp 1", "www.testwp1.com", "test1", "A webPage for testing purposes");
-    webPage2 = new WebPage(2L,null, "www.emptypage.com",null, null);
-    webPage3 = new WebPage(3L, "Test wp 3", "www.testwp3.com", "test3", "A webPage for testing purposes");
+    webPage1 = new WebPage(1L,null, "www.emptypage.com",null, null);
+    webPage2 = new WebPage(2L, "Test wp 2", "www.testwp2.com", "unique2 wp", "A webPage for testing purposes");
+    webPage3 = new WebPage(3L, "Test wp 3", "www.testwp3.com", "test3", "A unique3 webPage for testing purposes");
+    webPage4 = new WebPage(4L, "Test unique4 wp 4", "www.testwp4.com", "test4", "A webPage for testing purposes");
 
-    webPageRepository.saveAll(List.of(webPage1,webPage2,webPage3));
+    webPageRepository.saveAll(List.of(webPage2,webPage1,webPage3,webPage4));
   }
 
   @AfterEach
   void tearDown() {
-    webPage1 = null; webPage2 = null; webPage3 = null;
-    webPageRepository.deleteAll();
+    // NO need for this since each method runs on a transaction thats rolled back after execution
   }
 
   @Test
-  void testExistsWebPageByUrl() {
-    assertThat(webPageRepository.existsWebPageByUrl("www.testwp1.com")).isTrue();
+  void testExistsWebPageByUrl_FOUND() {
+    assertThat(webPageRepository.existsWebPageByUrl("www.testwp2.com")).isTrue();
   }
+
+  @Test
+  void testExistsWebPageByUrl_NOT_FOUND() {
+    assertThat(webPageRepository.existsWebPageByUrl("www.testwp5.com")).isFalse();
+  }
+
 
   @Test
   void testFindByTitleIsNullAndDescriptionIsNull() {
     List<WebPage> expected = webPageRepository
             .findByTitleIsNullAndDescriptionIsNull(PageRequest.ofSize(1));
-    assertThat(expected.get(0).getId()).isEqualTo(webPage2.getId());
-    assertThat(expected.get(0).getUrl()).isEqualTo(webPage2.getUrl());
+    assertThat(expected).containsOnly(webPage1);
   }
 
+  //TESTS for findByKeywordsContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrTitleContainingIgnoreCase()
+
+  //"unique2" found only in webPage2 keywords
   @Test
-  void findByKeywordsContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrTitleContainingIgnoreCase() {
+  void testSearchTerm_FOUND_OnKeywords_Only() {
+    List<WebPage> expected = webPageRepository
+            .findByKeywordsContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrTitleContainingIgnoreCase("unique2","unique2","unique2");
+    assertThat(expected).containsOnly(webPage2);
+  }
+
+  //"unique3" found only in webPage3 description
+  @Test
+  void testSearchTerm_FOUND_OnDescription_Only() {
+    List<WebPage> expected = webPageRepository
+            .findByKeywordsContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrTitleContainingIgnoreCase("unique3","unique3","unique3");
+    assertThat(expected).containsOnly(webPage3);
+  }
+
+  //"unique4" found only in webPage4 description
+  @Test
+  void testSearchTerm_FOUND_OnTitle_Only() {
+    List<WebPage> expected = webPageRepository
+            .findByKeywordsContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrTitleContainingIgnoreCase("unique4","unique4","unique4");
+    assertThat(expected).containsOnly(webPage4);
   }
 }
