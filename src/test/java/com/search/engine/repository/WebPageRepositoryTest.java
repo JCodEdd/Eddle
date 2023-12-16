@@ -18,7 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 @DataJpaTest
-@ExtendWith(SpringExtension.class)
 @EnableConfigurationProperties(value = IndexProps.class)
 class WebPageRepositoryTest {
 
@@ -41,7 +40,7 @@ class WebPageRepositoryTest {
 
   @AfterEach
   void tearDown() {
-    // NO need for this since each method runs on a transaction thats rolled back after execution
+    // NO need for this since each method runs on a transaction that's rolled back after execution
   }
 
   @Test

@@ -12,12 +12,13 @@ public class IndexProps {
   
   private int urlstoindex;
 
+  //TODO not sure if should delete this due not been used
   private int resultsNumber;
 
   private String interval;
   
   private boolean interrupt;
   
-  String[] urls;
+  private String[] urls;
 
 }
