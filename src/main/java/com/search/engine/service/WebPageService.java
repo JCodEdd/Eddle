@@ -69,19 +69,27 @@ public class WebPageService {
   }
   
   public List<WebPage> addUrls(List<String> urls) throws IllegalArgumentException {
+
     //Filters Urls that are already in the database
-    List<String> onlyNewUrls = urls.stream().filter(url -> !repository.existsWebPageByUrl(url))
-                                .collect(Collectors.toList());
-    if (onlyNewUrls.isEmpty()) {
-      throw new IllegalArgumentException("Sent URLs were already in database");
+    List<String> onlyValidAndNewUrls = urls.stream().filter(this::isValidLink)
+                .filter(url -> !repository.existsWebPageByUrl(url))
+                .collect(Collectors.toList());
+    if (onlyValidAndNewUrls.isEmpty()) {
+      throw new IllegalArgumentException("Sent URLs were invalid or already in database");
     }
     
     List<WebPage> toReplace = repository
-        .findByTitleIsNullAndDescriptionIsNull(PageRequest.of(0, onlyNewUrls.size()));
+        .findByTitleIsNullAndDescriptionIsNull(PageRequest.of(0, onlyValidAndNewUrls.size()));
 
-    IntStream.range(0, onlyNewUrls.size()).forEach(i -> toReplace.get(i).setUrl(onlyNewUrls.get(i)));
+    IntStream.range(0, onlyValidAndNewUrls.size()).forEach(i -> toReplace.get(i).setUrl(onlyValidAndNewUrls.get(i)));
     repository.flush();
     return toReplace;
+  }
+
+  private boolean isValidLink(String link) {
+    return link != null && !link.trim().isEmpty() && !link.startsWith("file:") &&
+            !link.startsWith("javascript:") && !link.startsWith("mailto:") &&
+            !link.equals("void(0)");
   }
 
   public void delete(Long id){

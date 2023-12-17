@@ -51,7 +51,7 @@ public class SearchController {
     try {
       return wpService.addUrls(urlsmMap.get("urls"));
     } catch (Exception e) {
-      throw new ResponseStatusException(HttpStatus.CONFLICT, e.getMessage());
+      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
     }
   }
 
