@@ -13,6 +13,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -23,7 +24,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
@@ -39,6 +40,7 @@ class WebPageServiceTest {
   private WebPageProps webPageProps;
 
   private WebPageService webPageService;
+  private WebPage webPage0;
   private WebPage webPage1;
   private WebPage webPage2;
   private WebPage webPage3;
@@ -50,11 +52,12 @@ class WebPageServiceTest {
     autoCloseable = MockitoAnnotations.openMocks(this);
     webPageService = new WebPageService(webPageRepository,indexProps, webPageProps);
 
-    webPage1 = new WebPage(1L,null, "www.emptypage.com",null, null);
+    webPage0 = new WebPage(0L,null, "www.emptypage.com",null, null);
+    webPage1 = new WebPage(1L,null, "www.emptypage1.com",null, null);
     webPage2 = new WebPage(2L, "Test wp 2", "www.testwp2.com", "test2", "A webPage for testing purposes");
     webPage3 = new WebPage(3L, "Test wp 3", "www.testwp3.com", "test3", "A webPage 4 testing purposes");
     webPage4 = new WebPage(4L, "Webpage 4", "www.wp4.com", "Webpage4", "A webPage 4");
-
+    webPageList = new ArrayList<>();
   }
 
   @AfterEach
@@ -90,22 +93,54 @@ class WebPageServiceTest {
   }
 
   @Test
-  void TestAddUrls_Throws_Ex_On() {
+  void TestAddUrls_Throws_Ex_OnInvalidOrAlreadyExistingUrls() {
+    when(webPageRepository.existsWebPageByUrl(webPage0.getUrl())).thenReturn(true);
+
+    assertThatExceptionOfType(IllegalArgumentException.class)
+            .isThrownBy(() -> webPageService.addUrls(List.of(" ", webPage0.getUrl())))
+            .withMessage("Sent URLs were invalid or already in database");
+  }
+  @Test
+  void TestAddUrls_WorksOk() {
+    webPageList.add(webPage0);
+    webPageList.add(webPage1);
+    when(webPageRepository.findByTitleIsNullAndDescriptionIsNull(PageRequest.ofSize(2)))
+            .thenReturn(webPageList);
+
+    List<String> listOfURLs = new ArrayList<>(List.of("www.inserted.com", "www.inserted1.com"));
+
+    assertThat(webPageService.addUrls(listOfURLs).get(0).getUrl()).isEqualTo("www.inserted.com");
+    verify(webPageRepository, times(1)).flush();
+    assertThat(webPageService.addUrls(listOfURLs).get(1).getUrl()).isEqualTo("www.inserted1.com");
   }
 
   @Test
   void delete() {
+    webPageService.delete(3L);
+    verify(webPageRepository, times(1)).deleteById(3L);
   }
 
   @Test
   void save() {
+    webPageService.save(new WebPage(5L,null, "www.emptypage5.com",null, null));
+    verify(webPageRepository, times(1)).save(any());
   }
 
   @Test
   void exist() {
+    when(webPageRepository.existsWebPageByUrl("www.emptypage.com")).thenReturn(true);
+    assertThat(webPageService.exist("www.emptypage.com")).isTrue();
+    verify(webPageRepository, times(1)).existsWebPageByUrl("www.emptypage.com");
   }
 
   @Test
   void getLinksToIndex() {
+    webPageList.add(webPage0);
+    webPageList.add(webPage1);
+    when(webPageRepository.findByTitleIsNullAndDescriptionIsNull(PageRequest.of(0, indexProps.getUrlstoindex())))
+            .thenReturn(webPageList);
+
+    assertThat(webPageService.getLinksToIndex()).containsSequence(webPage0,webPage1);
+    verify(webPageRepository, times(1)).findByTitleIsNullAndDescriptionIsNull(any());
   }
 }
