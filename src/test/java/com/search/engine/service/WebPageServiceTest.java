@@ -63,7 +63,6 @@ class WebPageServiceTest {
   @AfterEach
   void tearDown() throws Exception {
     autoCloseable.close();
-    //TODO if webPageList is not used in any method delete declaration and reference here
     webPageList = null;
   }
 
@@ -115,26 +114,26 @@ class WebPageServiceTest {
   }
 
   @Test
-  void delete() {
+  void testDelete() {
     webPageService.delete(3L);
     verify(webPageRepository, times(1)).deleteById(3L);
   }
 
   @Test
-  void save() {
+  void testSave() {
     webPageService.save(new WebPage(5L,null, "www.emptypage5.com",null, null));
     verify(webPageRepository, times(1)).save(any());
   }
 
   @Test
-  void exist() {
+  void testExist() {
     when(webPageRepository.existsWebPageByUrl("www.emptypage.com")).thenReturn(true);
     assertThat(webPageService.exist("www.emptypage.com")).isTrue();
     verify(webPageRepository, times(1)).existsWebPageByUrl("www.emptypage.com");
   }
 
   @Test
-  void getLinksToIndex() {
+  void testGetLinksToIndex() {
     webPageList.add(webPage0);
     webPageList.add(webPage1);
     when(webPageRepository.findByTitleIsNullAndDescriptionIsNull(PageRequest.of(0, indexProps.getUrlstoindex())))
