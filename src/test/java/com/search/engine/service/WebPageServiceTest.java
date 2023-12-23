@@ -86,7 +86,7 @@ class WebPageServiceTest {
             .findByKeywordsContainingIgnoreCaseOrDescriptionContainingIgnoreCaseOrTitleContainingIgnoreCase(anyString(),anyString(),anyString());
 
     //case 2: page # 1 (starting from 0) and size 1 are given, should return
-    //  wp 2 (the second page with all 3 wp in the same order ar the previous assertion)
+    //  wp 2 (the second page with all 3 wp in the same order as the previous assertion)
     assertThat(webPageService.search(query, Optional.of(1), Optional.of(1)))
             .containsSequence(List.of(webPage2));
   }

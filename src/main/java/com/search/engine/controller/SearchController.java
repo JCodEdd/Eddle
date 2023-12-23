@@ -29,7 +29,8 @@ public class SearchController {
   private final IndexService indexService;
 
   @GetMapping("search")
-  public List<WebPage> search(@RequestParam("query") String query, @RequestParam("page") Optional<Integer> page, @RequestParam("size") Optional<Integer> pageSize){
+  public List<WebPage> search(@RequestParam("query") String query, @RequestParam("page") Optional<Integer> page,
+                              @RequestParam("size") Optional<Integer> pageSize){
     return wpService.search(query, page, pageSize);
   }
 

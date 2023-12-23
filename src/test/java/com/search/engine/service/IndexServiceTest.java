@@ -24,6 +24,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.*;
@@ -213,6 +214,40 @@ class IndexServiceTest {
       latch.await(5, TimeUnit.SECONDS); // Wait for the scheduled task to complete
 
       verify(webPageService).delete(webPageToIndex.getId());
+    }
+
+  }
+
+  //Test that in case of an HttpStatusException when GETing the url content, proper handling is done
+  @Test
+  public void testIndexWebPage_SocketTimeoutException_DoesntDeleteWebPage() throws Exception {
+    WebPage webPageToIndex = new WebPage("http://example.com");
+    webPageToIndex.setId(1L);
+
+    when(webPageService.getLinksToIndex()).thenReturn(List.of(webPageToIndex));
+    when(webPageService.exist(anyString())).thenReturn(false);
+
+
+    try (MockedStatic<Jsoup> jsoupMockedStatic = Mockito.mockStatic(Jsoup.class)) {
+
+      Connection mockConnection = Mockito.mock(Connection.class);
+      jsoupMockedStatic.when(() -> Jsoup.connect("http://example.com")).thenReturn(mockConnection);
+      when(mockConnection.get()).thenThrow(SocketTimeoutException.class);
+
+      //introduce a CountDownLatch to stop test thread until the "mocked indexing" finishes
+      CountDownLatch latch = new CountDownLatch(1);
+
+      //capture asynchronous executions using CountDownLatch
+      doAnswer(invocation -> {
+        ((Runnable) invocation.getArgument(0)).run(); // Trigger the task's run method
+        latch.countDown(); // Countdown to signal completion
+        return null;
+      }).when(taskScheduler).scheduleAtFixedRate(any(), any());
+
+      indexService.start();
+      latch.await(5, TimeUnit.SECONDS); // Wait for the scheduled task to complete
+
+      verify(webPageService, times(0)).delete(webPageToIndex.getId());
     }
 
   }
