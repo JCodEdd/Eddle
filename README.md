@@ -1,5 +1,5 @@
 # <img src="https://github.com/JCodEdd/search-engine/blob/main/src/main/resources/static/img/fullLogo.png" width="90" /> Search engine 
-This project implements a basic web crawler and search engine using Spring Boot with a lightweight frontend UI for interaction. 
+This project implements a web crawler and search engine using Spring Boot with a lightweight frontend UI for interaction. 
 Its main purpose is to showcase technical skills and architectural concepts.
 
 ## Technologies
@@ -9,6 +9,21 @@ Its main purpose is to showcase technical skills and architectural concepts.
 * Logback
 * Swagger UI & OpenAPI docs
 * Basic HTML/CSS/JS frontend
+
+## Testing
+The project contains a robust test suite that covers all major components and provides strong validation of functionality.
+Unit tests using JUnit and Mockito validate core services, ensuring search, indexing and data access layers function 
+as expected under both normal and error conditions. Incorporating Spring's wide support for web layer
+testing, we meticulously verified all controllers' responsibilities. Configuration classes are also tested to verify 
+properties are properly loaded. The testing strategy, enriched by the synergy of key Java testing technologies and 
+Spring's robust support, meticulously evaluates the system, ensuring its resilience and correctness. 
+
+### Main Testing Technologies
+
+- JUnit
+- Mockito
+- AssertJ
+- Logback testing utilities
 
 ## Architecture
 The project follows a layered architecture with data stored in a MySQL database. Configuration is managed via YAML file, and logging 
