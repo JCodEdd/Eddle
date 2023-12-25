@@ -11,7 +11,7 @@ Its main purpose is to showcase technical skills and architectural concepts.
 * Basic HTML/CSS/JS frontend
 
 ## Testing
-The project contains a robust test suite that covers all major components and provides strong validation of functionality.
+We created a robust test suite that covers all major components and provides strong validation of functionality.
 Unit tests using JUnit and Mockito validate core services, ensuring search, indexing and data access layers function 
 as expected under both normal and error conditions. Incorporating Spring's wide support for web layer
 testing, we meticulously verified all controllers' responsibilities. Configuration classes are also tested to verify 
