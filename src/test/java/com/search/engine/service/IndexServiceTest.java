@@ -1,5 +1,8 @@
 package com.search.engine.service;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.search.engine.configuration.IndexProps;
 import com.search.engine.configuration.SchedulerConfig;
 import com.search.engine.configuration.WebPageProps;
@@ -14,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
@@ -29,6 +33,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -39,7 +44,7 @@ import static org.mockito.Mockito.*;
 class IndexServiceTest {
 
   @Mock
-  private WebPageService webPageService;
+  private WebPageIndexer webPageIndexer;
   @Mock
   private TaskScheduler taskScheduler;
   @Mock
@@ -52,7 +57,7 @@ class IndexServiceTest {
   @BeforeEach
   void setUp() {
     autoCloseable = MockitoAnnotations.openMocks(this);
-    indexService = new IndexService(webPageService, indexProps, taskScheduler);
+    indexService = new IndexService(webPageIndexer, indexProps, taskScheduler);
   }
 
   @AfterEach
@@ -62,7 +67,7 @@ class IndexServiceTest {
 
   //Test that calls to start() correctly schedule the indexing task
   @Test
-  public void testStart() {
+  void testStart() {
     when(taskScheduler.scheduleAtFixedRate( any(Runnable.class), any(Duration.class) )).thenReturn(mockFuture);
 
     indexService.start();
@@ -73,252 +78,60 @@ class IndexServiceTest {
 
   //Test that calls to stop() stop the indexing tasks canceling or not running ones according to props
   @Test
-  public void testStop() {
+  void testStop() {
     when(taskScheduler.scheduleAtFixedRate( any(Runnable.class), any(Duration.class) )).thenReturn(mockFuture);
 
     indexService.start();
     indexService.stop();
 
-    verify(mockFuture).cancel(eq(indexProps.isInterrupt()));
+    verify(mockFuture).cancel(indexProps.isInterrupt());
   }
 
-  /**
-   * Test that indexWebPage() properly indexes a web page: simulates the successful execution of the scheduled task,
-   including the parsing and saving of web page information, and ensures that the webPageService.save method
-   is called with the correct WebPage object
-   */
+  //Test that scheduled tasks run() call WebPageIndexer.indexWebPage()
   @Test
-  public void testScheduledTask_SuccessfulIndexesWebPage() throws IOException {
-    WebPage webPageToIndex = new WebPage("http://example.com");
-    String title = "title";
-    String description = "description";
-    String keywords = "keywords";
+  void testScheduledTaskExecutor_Run_CallsIndexWebPage() {
 
-    when(webPageService.getLinksToIndex()).thenReturn(List.of(webPageToIndex));
-    when(webPageService.exist(anyString())).thenReturn(false);
+    //capture scheduled task execution
+    doAnswer(invocation -> {
+      ((Runnable) invocation.getArgument(0)).run(); // Trigger the task's run method
+      return null;
+    }).when(taskScheduler).scheduleAtFixedRate(any(), any());
 
-    //create an empty Jsoup Document to insert the info IndexService should parse
-    Document document = Document.createShell("testDoc");
-    document.title(title);
+    indexService.start();
 
-    //create and insert the description
-    Element newElement = document.createElement("meta");
-    newElement.attr("name", "description");
-    newElement.attr("content", description);
-    document.head().appendChild(newElement);
-
-    //create and insert the keywords
-    Element newElement1 = document.createElement("meta");
-    newElement1.attr("name", "keywords");
-    newElement1.attr("content", keywords);
-    document.head().appendChild(newElement1);
-
-    //create and insert the links
-    Element newElement2 = document.createElement("a");
-    newElement2.attr("abs:href", "http://parsedlink.com");
-    document.body().appendChild(newElement2);
-
-    try (MockedStatic<Jsoup> jsoupMockedStatic = Mockito.mockStatic(Jsoup.class)) {
-
-      Connection mockConnection = Mockito.mock(Connection.class);
-      jsoupMockedStatic.when(() -> Jsoup.connect("http://example.com")).thenReturn(mockConnection);
-      when(mockConnection.get()).thenReturn(document);
-
-      //introduce a CountDownLatch to stop test thread until the "mocked indexing" finishes
-      CountDownLatch latch = new CountDownLatch(1);
-
-      //capture asynchronous executions using CountDownLatch
-      doAnswer(invocation -> {
-        ((Runnable) invocation.getArgument(0)).run(); // Trigger the task's run method
-        latch.countDown(); // Countdown to signal completion
-        return null;
-      }).when(taskScheduler).scheduleAtFixedRate(any(), any());
-
-      indexService.start();
-      latch.await(5, TimeUnit.SECONDS); // Wait for the scheduled task to complete
-
-      //verify that the webPageService.save method is called with the updated WebPage object.
-      verify(webPageService, times(1)).save(eq(webPageToIndex));
-
-      //verify save method is called with a WebPage whose url is the one parsed from indexed webPage
-      verify(webPageService, times(1))
-              .save(argThat(webPage -> webPage.getUrl().equals("http://parsedlink.com")));
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-
+    verify(webPageIndexer, atLeast(1)).indexWebPage();
   }
 
-  //Test that if the request URL is not an HTTP or HTTPS URL, or is otherwise malformed and a
-  // MalformedURLException is thrown and proper handling is done
   @Test
-  public void testIndexWebPage_MalformedURLException_DeletesWebPage() throws Exception {
-    WebPage webPageToIndex = new WebPage("http://example.com");
-    webPageToIndex.setId(1L);
+  void testStartLogsCorrectly() {
+    ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+    listAppender.start();
+    Logger logger = (Logger) LoggerFactory.getLogger(IndexService.class);
+    logger.addAppender(listAppender);
 
-    when(webPageService.getLinksToIndex()).thenReturn(List.of(webPageToIndex));
-    when(webPageService.exist(anyString())).thenReturn(false);
+    when(taskScheduler.scheduleAtFixedRate(any(Runnable.class), any(Duration.class))).thenReturn(mockFuture);
 
+    indexService.start();
 
-    try (MockedStatic<Jsoup> jsoupMockedStatic = Mockito.mockStatic(Jsoup.class)) {
-
-      Connection mockConnection = Mockito.mock(Connection.class);
-      jsoupMockedStatic.when(() -> Jsoup.connect("http://example.com")).thenReturn(mockConnection);
-      when(mockConnection.get()).thenThrow(MalformedURLException.class);
-
-      //introduce a CountDownLatch to stop test thread until the "mocked indexing" finishes
-      CountDownLatch latch = new CountDownLatch(1);
-
-      //capture asynchronous executions using CountDownLatch
-      doAnswer(invocation -> {
-        ((Runnable) invocation.getArgument(0)).run(); // Trigger the task's run method
-        latch.countDown(); // Countdown to signal completion
-        return null;
-      }).when(taskScheduler).scheduleAtFixedRate(any(), any());
-
-      indexService.start();
-      latch.await(5, TimeUnit.SECONDS); // Wait for the scheduled task to complete
-
-      verify(webPageService).delete(webPageToIndex.getId());
-    }
-
+    List<ILoggingEvent> logsList = listAppender.list;
+    // Verify the log messages, e.g., assert that "Calling the indexing process" is in the logsList
+    assertThat(logsList).extracting("message").contains("Calling the indexing process");
   }
 
-  //Test that in case of an HttpStatusException when GETing the url content, proper handling is done
   @Test
-  public void testIndexWebPage_HttpStatusException_DeletesWebPage() throws Exception {
-    WebPage webPageToIndex = new WebPage("http://example.com");
-    webPageToIndex.setId(1L);
+  void testStopLogsCorrectly() {
+    ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+    listAppender.start();
+    Logger logger = (Logger) LoggerFactory.getLogger(IndexService.class);
+    logger.addAppender(listAppender);
 
-    when(webPageService.getLinksToIndex()).thenReturn(List.of(webPageToIndex));
-    when(webPageService.exist(anyString())).thenReturn(false);
+    when(taskScheduler.scheduleAtFixedRate(any(Runnable.class), any(Duration.class))).thenReturn(mockFuture);
 
+    indexService.start();
+    indexService.stop();
 
-    try (MockedStatic<Jsoup> jsoupMockedStatic = Mockito.mockStatic(Jsoup.class)) {
-
-      Connection mockConnection = Mockito.mock(Connection.class);
-      jsoupMockedStatic.when(() -> Jsoup.connect("http://example.com")).thenReturn(mockConnection);
-      when(mockConnection.get()).thenThrow(HttpStatusException.class);
-
-      //introduce a CountDownLatch to stop test thread until the "mocked indexing" finishes
-      CountDownLatch latch = new CountDownLatch(1);
-
-      //capture asynchronous executions using CountDownLatch
-      doAnswer(invocation -> {
-        ((Runnable) invocation.getArgument(0)).run(); // Trigger the task's run method
-        latch.countDown(); // Countdown to signal completion
-        return null;
-      }).when(taskScheduler).scheduleAtFixedRate(any(), any());
-
-      indexService.start();
-      latch.await(5, TimeUnit.SECONDS); // Wait for the scheduled task to complete
-
-      verify(webPageService).delete(webPageToIndex.getId());
-    }
-
+    List<ILoggingEvent> logsList = listAppender.list;
+    // Verify the log messages, e.g., assert that "Calling the indexing process" is in the logsList
+    assertThat(logsList).extracting("message").contains("Stopping the indexing process");
   }
-
-  //Test that in case of an HttpStatusException when GETing the url content, proper handling is done
-  @Test
-  public void testIndexWebPage_SocketTimeoutException_DoesntDeleteWebPage() throws Exception {
-    WebPage webPageToIndex = new WebPage("http://example.com");
-    webPageToIndex.setId(1L);
-
-    when(webPageService.getLinksToIndex()).thenReturn(List.of(webPageToIndex));
-    when(webPageService.exist(anyString())).thenReturn(false);
-
-
-    try (MockedStatic<Jsoup> jsoupMockedStatic = Mockito.mockStatic(Jsoup.class)) {
-
-      Connection mockConnection = Mockito.mock(Connection.class);
-      jsoupMockedStatic.when(() -> Jsoup.connect("http://example.com")).thenReturn(mockConnection);
-      when(mockConnection.get()).thenThrow(SocketTimeoutException.class);
-
-      //introduce a CountDownLatch to stop test thread until the "mocked indexing" finishes
-      CountDownLatch latch = new CountDownLatch(1);
-
-      //capture asynchronous executions using CountDownLatch
-      doAnswer(invocation -> {
-        ((Runnable) invocation.getArgument(0)).run(); // Trigger the task's run method
-        latch.countDown(); // Countdown to signal completion
-        return null;
-      }).when(taskScheduler).scheduleAtFixedRate(any(), any());
-
-      indexService.start();
-      latch.await(5, TimeUnit.SECONDS); // Wait for the scheduled task to complete
-
-      verify(webPageService, times(0)).delete(webPageToIndex.getId());
-    }
-
-  }
-
-  //Test that in case of an error faced by Jsoup an IOException is thrown and proper handling is done
-  @Test
-  public void testIndexWebPage_IOException_DeletesWebPage() throws Exception {
-    WebPage webPageToIndex = new WebPage("http://example.com");
-    webPageToIndex.setId(1L);
-
-    when(webPageService.getLinksToIndex()).thenReturn(List.of(webPageToIndex));
-    when(webPageService.exist(anyString())).thenReturn(false);
-
-
-    try (MockedStatic<Jsoup> jsoupMockedStatic = Mockito.mockStatic(Jsoup.class)) {
-
-      Connection mockConnection = Mockito.mock(Connection.class);
-      jsoupMockedStatic.when(() -> Jsoup.connect("http://example.com")).thenReturn(mockConnection);
-      when(mockConnection.get()).thenThrow(IOException.class);
-
-      //introduce a CountDownLatch to stop test thread until the "mocked indexing" finishes
-      CountDownLatch latch = new CountDownLatch(1);
-
-      //capture asynchronous executions using CountDownLatch
-      doAnswer(invocation -> {
-        ((Runnable) invocation.getArgument(0)).run(); // Trigger the task's run method
-        latch.countDown(); // Countdown to signal completion
-        return null;
-      }).when(taskScheduler).scheduleAtFixedRate(any(), any());
-
-      indexService.start();
-      latch.await(5, TimeUnit.SECONDS); // Wait for the scheduled task to complete
-
-      verify(webPageService).delete(webPageToIndex.getId());
-    }
-
-  }
-
-  //Test that in case of an error not handled somewhere else an IOException
-  // is thrown and proper handling is done
-  @Test
-  public void testIndexWebPage_Exception_DeletesWebPage() throws Exception {
-    WebPage webPageToIndex = new WebPage("http://example.com");
-    webPageToIndex.setId(1L);
-
-    when(webPageService.getLinksToIndex()).thenReturn(List.of(webPageToIndex));
-    when(webPageService.exist(anyString())).thenReturn(false);
-
-
-    try (MockedStatic<Jsoup> jsoupMockedStatic = Mockito.mockStatic(Jsoup.class)) {
-
-      Connection mockConnection = Mockito.mock(Connection.class);
-      jsoupMockedStatic.when(() -> Jsoup.connect("http://example.com")).thenReturn(mockConnection);
-      doAnswer(invocation -> { throw new Exception("Unexpected error"); }).when(mockConnection).get();
-
-      //introduce a CountDownLatch to stop test thread until the "mocked indexing" finishes
-      CountDownLatch latch = new CountDownLatch(1);
-
-      //capture asynchronous executions using CountDownLatch
-      doAnswer(invocation -> {
-        ((Runnable) invocation.getArgument(0)).run(); // Trigger the task's run method
-        latch.countDown(); // Countdown to signal completion
-        return null;
-      }).when(taskScheduler).scheduleAtFixedRate(any(), any());
-
-      indexService.start();
-      latch.await(5, TimeUnit.SECONDS); // Wait for the scheduled task to complete
-
-      verify(webPageService).delete(webPageToIndex.getId());
-    }
-
-  }
-
 }
