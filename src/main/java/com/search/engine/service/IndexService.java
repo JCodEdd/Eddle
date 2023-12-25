@@ -26,7 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class IndexService{
 
-  private final WebPageService wpService;
+
+  private final WebPageIndexer webPageIndexer;
   private final IndexProps indProps;
 
   private final TaskScheduler taskScheduler;
@@ -41,65 +42,14 @@ public class IndexService{
     log.info("Stopping the indexing process");
     if (taskState != null) {
     taskState.cancel(indProps.isInterrupt());      
-    } else return;
+    }
   }
 
   class ScheduledTaskExecutor implements Runnable{
     @Override
     public void run() {
-      indexWebPage();
+      webPageIndexer.indexWebPage();
     }
-  }
-
-  @Async
-  private void indexWebPage() {
-    log.info("Starting indexing");
-    List<WebPage> linksToIndex = wpService.getLinksToIndex();
-
-    linksToIndex.forEach(wpToIndex -> {
-      try {
-        Document doc = Jsoup.connect(wpToIndex.getUrl()).get();
-        parseAndSaveLinks(doc);
-
-        String title = doc.title();
-        String description = doc.select("meta[name=description]")
-              .attr("content");
-        String keywords = doc.select("meta[name=keywords]")
-              .attr("content");
-
-        wpToIndex.setTitle(title);
-        wpToIndex.setDescription(description);
-        wpToIndex.setKeywords(keywords);
-        wpService.save(wpToIndex);
-      } catch (HttpStatusException | MalformedURLException e) {
-        wpService.delete(wpToIndex.getId());
-        log.error("URL malformed or not accessible. Deleting URL from database: {}", wpToIndex.getUrl(), e);
-      } catch (SocketTimeoutException e) {
-        log.error("Connection timeout has occurred with: {}", wpToIndex.getUrl(), e);
-      } catch (IOException e) {
-        wpService.delete(wpToIndex.getId());
-        log.error("Error processing URL. Deleting URL from database: {}", wpToIndex.getUrl(), e);
-      } catch (Exception e) {
-        wpService.delete(wpToIndex.getId());
-        log.error("Unexpected Error. Deleting URL from database: {}", wpToIndex.getUrl(), e);
-      }
-    });
-  }
-
-  private void parseAndSaveLinks(Document doc) {
-    Elements links = doc.select("a");
-    if (links.isEmpty()) {return;}
-
-    links.stream().map(link -> link.attr("abs:href"))
-          .filter(this::isValidLink).filter(link -> !wpService.exist(link))
-          .map(link -> new WebPage(link)).forEach(webPage -> wpService.save(webPage));
-
-  }
-
-  private boolean isValidLink(String link) {
-    return link != null && !link.trim().isEmpty() && !link.startsWith("file:") &&
-          !link.startsWith("javascript:") && !link.startsWith("mailto:") && 
-          !link.equals("void(0)");
   }
 
 }
