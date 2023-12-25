@@ -8,7 +8,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 class SchedulerConfigTest {
 
   @Test
-  public void testTaskSchedulerBean() {
+  void testTaskSchedulerBean() {
     SchedulerConfig schedulerConfig = new SchedulerConfig();
 
     ThreadPoolTaskScheduler taskScheduler = (ThreadPoolTaskScheduler) schedulerConfig.taskScheduler();

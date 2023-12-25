@@ -8,7 +8,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.springframework.beans.support.PagedListHolder;
@@ -37,9 +36,9 @@ public class WebPageService {
     List<String> qTerms = Arrays.asList(decodedQuery.split("\\s"));
 
     //All webpages that contain each search term
-    List<List<WebPage>> allFromRepo = qTerms.stream().map(param -> searchInRepo(param))
-                            .collect(Collectors.toList());
-    
+    List<List<WebPage>> allFromRepo = qTerms.stream().map(this::searchInRepo)
+                            .toList();
+
     //Taking only the webpages that contain all search terms 
     //This and the next step are a somewhat bittersweet way to have the webpages that match all the terms at the top.
     Set<WebPage> allMatchesFirst = new LinkedHashSet<>(allFromRepo.get(0));
@@ -73,7 +72,7 @@ public class WebPageService {
     //Filters Urls that are already in the database
     List<String> onlyValidAndNewUrls = urls.stream().filter(this::isValidLink)
                 .filter(url -> !repository.existsWebPageByUrl(url))
-                .collect(Collectors.toList());
+                .toList();
     if (onlyValidAndNewUrls.isEmpty()) {
       throw new IllegalArgumentException("Sent URLs were invalid or already in database");
     }

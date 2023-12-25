@@ -20,9 +20,7 @@ public class EddleApplication {
 
   @Bean
   CommandLineRunner dataLoader(WebPageRepository webPageRepository, IndexProps props){
-  return args -> {
-    Arrays.asList(props.getUrls()).stream().forEach(url -> webPageRepository.save(new WebPage(url)));
-  };
+  return args -> Arrays.stream(props.getUrls()).forEach(url -> webPageRepository.save(new WebPage(url)));
   }
 
 }
